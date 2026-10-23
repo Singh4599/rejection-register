@@ -39,7 +39,7 @@ const SUPPLIERS = [
   'Mehta Commodities, Gujarat'
 ];
 
-const INSPECTORS = ['BHIMLAL SHARMA', 'Vishal Chaturvedi', 'Mukesh Vora'];
+const INSPECTORS = ['Bhimlal Sharma', 'Vishal Chaturvedi', 'Mukesh Vora'];
 
 const CORRECTIVE_ACTIONS = [
   'Returned to Supplier',
