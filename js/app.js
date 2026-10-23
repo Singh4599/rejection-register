@@ -39,7 +39,7 @@ const SUPPLIERS = [
   'Mehta Commodities, Gujarat'
 ];
 
-const INSPECTORS = ['Rajesh Sharma', 'Vishal Chaturvedi', 'Mukesh Vora'];
+const INSPECTORS = ['BHIMLAL SHARMA', 'Vishal Chaturvedi', 'Mukesh Vora'];
 
 const CORRECTIVE_ACTIONS = [
   'Returned to Supplier',
@@ -58,82 +58,89 @@ let activeMonth = 'ALL';
 let editingId = null;
 let srCounter = 1;
 
-const MONTHS = ['APRIL','MAY','JUNE','JULY','AUG','SEP','OCT'];
-const MONTH_MAP = {
-  'APRIL':'2026-04','MAY':'2026-05','JUNE':'2026-06','JULY':'2026-07',
-  'AUG':'2026-08','SEP':'2026-09','OCT':'2026-10'
-};
-const MONTH_LABEL = {
-  'APRIL':'April 2026','MAY':'May 2026','JUNE':'June 2026','JULY':'July 2026',
-  'AUG':'Aug 2026','SEP':'Sep 2026','OCT':'Oct 2026'
-};
-
+// ✅ LIFETIME: Month helpers — dynamic, no hardcoded list
 function seedRng(seed) {
-  let s = seed; return () => { s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff; };
+  let s = (seed|0)+1; return () => { s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff; };
 }
 function esc(s) { return s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
 function fmtDate(ds) {
   const d = new Date(ds + 'T00:00:00');
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
-function getMonthKey(dateStr) {
-  const m = dateStr.substring(5,7);
-  return Object.entries(MONTH_MAP).find(([k,v]) => v === `2026-${m}`)?.[0] || 'OCT';
+const MONTH_NAMES_FULL  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_NAMES_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function mkMonthKey(dateStr)  { return dateStr.substring(0,7); } // 'YYYY-MM'
+function mkMonthLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${MONTH_NAMES_SHORT[d.getMonth()]} ${d.getFullYear()}`;
+}
+function mkMonthDisplay(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${MONTH_NAMES_FULL[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// ── DATA GENERATION ───────────────────────────────────────────────────────────
+// ── DATA GENERATION ──────────────────────────────────────────────────────────
+// ✅ LIFETIME: Auto-generates 1 rejection every 65-75 days from April 14, 2026.
+//    Seeded RNG makes each rejection deterministic (same every refresh).
+//    Extends automatically as today's date moves forward — works FOREVER.
 function generateEntries() {
-  const entries = [];
   const today = new Date();
-  let sr = 1;
+  today.setHours(23,59,59,999);
+  const entries = [];
+  let cur = new Date('2026-04-14T00:00:00'); // first rejection date
+  let idx = 0;
 
-  // Generate 2-4 rejections per month from April 2026
-  MONTHS.forEach(mk => {
-    const prefix = MONTH_MAP[mk];
-    const [yr, mo] = prefix.split('-').map(Number);
-    const firstOfMonth = new Date(yr, mo-1, 1);
-    if (firstOfMonth > today) return;
-
-    const count = 2 + Math.floor(seedRng(yr*100+mo)() * 3); // 2-4 per month
-    for (let i = 0; i < count; i++) {
-      const rng = seedRng(yr * 1000 + mo * 37 + i * 13);
-      const day = 2 + Math.floor(rng() * 26);
-      const dateStr = `${yr}-${String(mo).padStart(2,'0')}-${String(Math.min(day, 28)).padStart(2,'0')}`;
-      const rejDate = new Date(dateStr + 'T00:00:00');
-      if (rejDate > today) return;
-
-      const reasonIdx = Math.floor(rng() * REJECTION_REASONS.length);
-      const matIdx    = Math.floor(rng() * RAW_MATERIALS.length);
-      const supIdx    = Math.floor(rng() * SUPPLIERS.length);
-      const inspIdx   = Math.floor(rng() * INSPECTORS.length);
-      const caIdx     = Math.floor(rng() * CORRECTIVE_ACTIONS.length);
-      const qty       = (5 + Math.floor(rng() * 95));
-      const invNo     = `INV-${yr.toString().slice(2)}${String(mo).padStart(2,'0')}-${String(Math.floor(1000+rng()*9000))}`;
-      const batchNo   = `RM-${yr.toString().slice(2)}${String(mo).padStart(2,'0')}${String(Math.floor(100+rng()*900))}`;
-
-      entries.push({
-        id: `RR-${dateStr}-${String(i+1).padStart(2,'0')}`,
-        srNo: sr++,
-        date: dateStr,
-        displayDate: fmtDate(dateStr),
-        monthKey: mk,
-        rawMaterial: RAW_MATERIALS[matIdx],
-        supplierName: SUPPLIERS[supIdx],
-        invoiceNo: invNo,
-        batchNo,
-        quantityKg: qty,
-        rejectionReason: REJECTION_REASONS[reasonIdx],
-        correctiveAction: CORRECTIVE_ACTIONS[caIdx],
-        inspectedBy: INSPECTORS[inspIdx],
-        remarks: '',
-        isGenerated: true
-      });
-    }
-  });
+  while (cur <= today) {
+    const seed = (cur.getTime() / 86400000) | 0;
+    const rng = seedRng(seed);
+    const y  = cur.getFullYear();
+    const mo = String(cur.getMonth()+1).padStart(2,'0');
+    const dd = String(cur.getDate()).padStart(2,'0');
+    const dateStr = `${y}-${mo}-${dd}`;
+    const material   = RAW_MATERIALS[Math.floor(rng() * RAW_MATERIALS.length)];
+    const supplier   = SUPPLIERS[Math.floor(rng() * SUPPLIERS.length)];
+    const reason     = REJECTION_REASONS[Math.floor(rng() * REJECTION_REASONS.length)];
+    const corrective = CORRECTIVE_ACTIONS[Math.floor(rng() * CORRECTIVE_ACTIONS.length)];
+    const inspector  = INSPECTORS[Math.floor(rng() * INSPECTORS.length)];
+    const qty        = 25 + Math.floor(rng() * 80);
+    const invSeq     = String(Math.floor(1000 + rng()*9000)).padStart(4,'0');
+    const REMARKS_MAP = {
+      'Poor Quality / Inferior Material':    'Colour and texture not meeting FSSAI standard.',
+      'Damaged Packaging':                    'Outer bags torn on arrival; inner contents exposed.',
+      'Torn / Open Bags':                     'Multiple bags found open at warehouse gate.',
+      'Moisture / Wet Material':              'Moisture content above permitted limit; supplier notified.',
+      'Insect Infestation':                   'Live insects found; full batch quarantined and disposed.',
+      'Fungus / Mould Contamination':         'Visible mould on top layer; batch rejected.',
+      'Foreign Matter / Impurities':          'Stones and sticks found during sieving.',
+      'Unusual Smell / Colour':               'Unusual odour detected at receiving stage.',
+      'Material Not as per Specification':    'Lab test failed; moisture and ash content out of spec.',
+      'Expired / Shelf Life Issue':           'Best before date already passed at time of delivery.'
+    };
+    entries.push({
+      id: `RR-${dateStr}-${String(idx+1).padStart(3,'0')}`,
+      srNo: idx + 1,
+      date: dateStr,
+      displayDate: `${dd}/${mo}/${y}`,
+      monthKey: mkMonthKey(dateStr),
+      monthLabel: mkMonthLabel(dateStr),
+      monthDisplay: mkMonthDisplay(dateStr),
+      rawMaterial: material,
+      supplierName: supplier,
+      invoiceNo: `INV-${y.toString().slice(2)}${mo}-${invSeq}`,
+      batchNo: `RM-${y.toString().slice(2)}${mo}${dd}`,
+      quantityKg: qty,
+      rejectionReason: reason,
+      correctiveAction: corrective,
+      inspectedBy: inspector,
+      remarks: REMARKS_MAP[reason] || '',
+      isGenerated: true
+    });
+    idx++;
+    const gap = 65 + Math.floor(rng() * 11); // 65-75 days
+    cur = new Date(cur.getTime() + gap * 86400000);
+  }
   return entries.sort((a,b) => b.date.localeCompare(a.date));
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
+}// ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
   try {
     const cloudData = await loadAllEntriesFromCloud();
@@ -176,14 +183,21 @@ function updateStats() {
 }
 
 // ── MONTH TABS ────────────────────────────────────────────────────────────────
+// ✅ LIFETIME: Dynamic from actual records — auto-extends forever
 function renderMonthTabs() {
   const bar = document.getElementById('month-tab-bar');
   if (!bar) return;
-  const allBtn = `<button class="month-tab-btn ${activeMonth==='ALL'?'active':''}" onclick="setMonth('ALL')">All</button>`;
-  const tabs = MONTHS.map(mk => {
+  const seen = new Set(), mks = [];
+  [...allEntries].sort((a,b) => a.date.localeCompare(b.date)).forEach(e => {
+    if (!seen.has(e.monthKey)) { seen.add(e.monthKey); mks.push(e.monthKey); }
+  });
+  mks.reverse();
+  const allBtn = `<button class="month-tab-btn ${activeMonth==='ALL'?'active':''}" onclick="setMonth('ALL')">All <span class="month-tab-cnt">${allEntries.length}</span></button>`;
+  const tabs = mks.map(mk => {
     const cnt = allEntries.filter(e => e.monthKey === mk).length;
-    if (!cnt) return '';
-    return `<button class="month-tab-btn ${activeMonth===mk?'active':''}" onclick="setMonth('${mk}')">${mk} <span class="month-tab-cnt">${cnt}</span></button>`;
+    const sample = allEntries.find(e => e.monthKey === mk);
+    const lbl = sample?.monthLabel || mk;
+    return `<button class="month-tab-btn ${activeMonth===mk?'active':''}" onclick="setMonth('${mk}')">${lbl} <span class="month-tab-cnt">${cnt}</span></button>`;
   }).join('');
   bar.innerHTML = allBtn + tabs;
 }
@@ -193,7 +207,6 @@ window.setMonth = function(mk) {
   renderMonthTabs();
   applyFilter();
 };
-
 // ── FILTER ────────────────────────────────────────────────────────────────────
 function applyFilter() {
   const q = searchQuery.toLowerCase();
@@ -363,11 +376,12 @@ window.saveEntry = async function() {
   if (!selectedReason) { alert('Please select a Rejection Reason.'); return; }
   if (!selectedCA)     { alert('Please select a Corrective Action.'); return; }
 
-  const mk = getMonthKey(dateVal);
+  const mk = mkMonthKey(dateVal);
   const id = editingId || `RR-${dateVal}-${Date.now().toString().slice(-5)}`;
 
   const entry = {
-    id, date: dateVal, displayDate: fmtDate(dateVal), monthKey: mk,
+    id, date: dateVal, displayDate: fmtDate(dateVal),
+    monthKey: mk, monthLabel: mkMonthLabel(dateVal), monthDisplay: mkMonthDisplay(dateVal),
     rawMaterial: material,
     supplierName: supplier,
     invoiceNo: g('f-invoice')?.value?.trim() || '',
