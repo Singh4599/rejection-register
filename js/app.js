@@ -464,7 +464,7 @@ window.printRegister = function() {
     <td><b>${esc(e.rawMaterial)}</b><br><span style="font-size:6pt;color:#666">Batch: ${esc(e.batchNo)}</span></td>
     <td>${esc(e.supplierName)}<br><span style="font-size:6pt;color:#666">${esc(e.invoiceNo)}</span></td>
     <td style="text-align:center"><b>${e.quantityKg} KG</b></td>
-    <td>${reasonBadge(e.rejectionReason)}</td>
+    <td>${esc(e.rejectionReason)}</td>
     <td>${esc(e.correctiveAction)}</td>
     <td>${esc(e.inspectedBy)}</td>
     <td>${esc(e.remarks)}</td>
