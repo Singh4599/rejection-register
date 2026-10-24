@@ -448,6 +448,78 @@ window.exportExcel = function() {
   XLSX.writeFile(wb, 'LV_Spices_Rejection_Register.xlsx');
 };
 
-window.printRegister = function() { window.print(); };
+window.printRegister = function() {
+  const data = filteredEntries.length ? filteredEntries : allEntries;
+  if (!data.length) { alert('No entries to print.'); return; }
+  const rowH = Math.max(8, Math.floor(148 / data.length));
+  function esc(v){ return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '—'; }
+  function reasonBadge(v){
+    const colors = {'Poor Quality':'#dc2626','Damaged':'#ea580c','Moisture / Wet Material':'#0284c7','Unusual Smell / Colour':'#7c3aed','Foreign Matter':'#166534','Expired / Near Expiry':'#b91c1c','Short Weight':'#b45309','Mislabelled / Wrong':'#0f766e'};
+    const bg = colors[v] || '#475569';
+    return `<span style="background:${bg};color:#fff;padding:1pt 5pt;border-radius:3pt;font-size:6pt;font-weight:700;white-space:nowrap;-webkit-print-color-adjust:exact;print-color-adjust:exact">${esc(v)}</span>`;
+  }
+  const rowsHtml = data.map((e,i) => `<tr style="height:${rowH}mm;${i%2===1?'background:#f7f7f7':''}">
+    <td style="text-align:center">${e.srNo||i+1}</td>
+    <td>${esc(e.displayDate)}</td>
+    <td><b>${esc(e.rawMaterial)}</b><br><span style="font-size:6pt;color:#666">Batch: ${esc(e.batchNo)}</span></td>
+    <td>${esc(e.supplierName)}<br><span style="font-size:6pt;color:#666">${esc(e.invoiceNo)}</span></td>
+    <td style="text-align:center"><b>${e.quantityKg} KG</b></td>
+    <td>${reasonBadge(e.rejectionReason)}</td>
+    <td>${esc(e.correctiveAction)}</td>
+    <td>${esc(e.inspectedBy)}</td>
+    <td>${esc(e.remarks)}</td>
+  </tr>`).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>LV Spices — Raw Material Rejection Register</title>
+<style>
+  @page{size:A4 landscape;margin:8mm}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{font-family:Arial,sans-serif;font-size:8pt;color:#000;background:#fff}
+  .hdr{border:2pt solid #000;padding:6pt 8pt;margin-bottom:6pt}
+  .hdr h1{font-size:13pt;font-weight:800;text-transform:uppercase}
+  .hdr p{font-size:7pt;color:#444;margin-top:2pt}
+  .pills{display:flex;gap:6pt;margin-top:5pt;flex-wrap:wrap}
+  .pill{border:1pt solid #555;padding:1pt 6pt;font-size:7pt;border-radius:3pt}
+  .pill b{color:#B91C1C}
+  table{width:100%;border-collapse:collapse;margin-top:5pt}
+  thead{display:table-header-group}
+  tr{page-break-inside:avoid}
+  th{background:#1a1a1a;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:7pt;padding:5pt 4pt;border:0.75pt solid #000;text-align:left}
+  td{font-size:8pt;padding:4pt;border:0.5pt solid #bbb;vertical-align:middle}
+  .sig{margin-top:12pt;font-size:8pt;display:flex;justify-content:space-between}
+</style></head><body>
+<div class="hdr">
+  <h1>Raw Material Rejection Register — L V Spices</h1>
+  <p>Supplier Rejection Tracking • FSSAI Inward Quality Control</p>
+  <div class="pills">
+    <span class="pill">🗓️ Printed: <b>${new Date().toLocaleDateString('en-IN')}</b></span>
+    <span class="pill">❌ Total Rejections: <b>${data.length}</b></span>
+    <span class="pill">📦 Total Qty Rejected: <b>${data.reduce((s,e)=>s+(parseFloat(e.quantityKg)||0),0)} KG</b></span>
+  </div>
+</div>
+<table>
+  <thead><tr>
+    <th style="width:4%">SR.</th>
+    <th style="width:8%">DATE</th>
+    <th style="width:18%">RAW MATERIAL &amp; BATCH</th>
+    <th style="width:16%">SUPPLIER &amp; INVOICE</th>
+    <th style="width:7%">QTY (KG)</th>
+    <th style="width:16%">REASON FOR REJECTION</th>
+    <th style="width:15%">CORRECTIVE ACTION</th>
+    <th style="width:9%">INSPECTED BY</th>
+    <th style="width:9%">REMARKS</th>
+  </tr></thead>
+  <tbody>${rowsHtml}</tbody>
+</table>
+<div class="sig">
+  <span><b>Quality Manager:</b> &nbsp; Bhimlal Sharma</span>
+  <span><b>Date:</b> ${new Date().toLocaleDateString('en-IN')}</span>
+</div>
+<script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};<\/script>
+</body></html>`;
+  const pw = window.open('','_blank','width=1200,height=850');
+  if(pw){pw.document.write(html);pw.document.close();}
+  else{alert('Allow popups to use Print.');}
+};
 
 document.addEventListener('DOMContentLoaded', () => { init(); });
