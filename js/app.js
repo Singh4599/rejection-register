@@ -492,7 +492,6 @@ window.printRegister = function() {
   <h1>Raw Material Rejection Register — L V Spices</h1>
   <p>Supplier Rejection Tracking • FSSAI Inward Quality Control</p>
   <div class="pills">
-    <span class="pill">🗓️ Printed: <b>${new Date().toLocaleDateString('en-IN')}</b></span>
     <span class="pill">❌ Total Rejections: <b>${data.length}</b></span>
     <span class="pill">📦 Total Qty Rejected: <b>${data.reduce((s,e)=>s+(parseFloat(e.quantityKg)||0),0)} KG</b></span>
   </div>
@@ -513,7 +512,7 @@ window.printRegister = function() {
 </table>
 <div class="sig">
   <span><b>Quality Manager:</b> &nbsp; Bhimlal Sharma</span>
-  <span><b>Date:</b> ${new Date().toLocaleDateString('en-IN')}</span>
+  <span><b>Date:</b> ____________________</span>
 </div>
 <script>window.onload=function(){window.print();setTimeout(function(){window.close();},800);};<\/script>
 </body></html>`;
