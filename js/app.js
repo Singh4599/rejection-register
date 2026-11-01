@@ -453,7 +453,7 @@ window.cancelForm = function() { switchView('register'); editingId = null; };
 
 // ── EXCEL EXPORT ──────────────────────────────────────────────────────────────
 window.exportExcel = function() {
-  const rows = filteredEntries.length ? filteredEntries : allEntries;
+  const rows = filteredEntries.length ? filteredEntries : unitEntries();
   if (!rows.length) { alert('No records to export'); return; }
   const headers = [
     'Sr.No', 'Date', 'Raw Material', 'Supplier Name', 'Invoice No.',
@@ -473,7 +473,7 @@ window.exportExcel = function() {
 };
 
 window.printRegister = function() {
-  const data = filteredEntries.length ? filteredEntries : allEntries;
+  const data = filteredEntries.length ? filteredEntries : unitEntries();
   if (!data.length) { alert('No entries to print.'); return; }
   const rowH = Math.max(8, Math.floor(148 / data.length));
   function esc(v){ return v ? String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '—'; }
@@ -513,7 +513,7 @@ window.printRegister = function() {
   .sig{margin-top:12pt;font-size:8pt;display:flex;justify-content:space-between}
 </style></head><body>
 <div class="hdr">
-  <h1>Raw Material Rejection Register — L V Spices</h1>
+  <h1>Raw Material Rejection Register — L V Spices • ${activeUnit}</h1>
   <p>Supplier Rejection Tracking • FSSAI Inward Quality Control</p>
   <div class="pills">
     <span class="pill">❌ Total Rejections: <b>${data.length}</b></span>
