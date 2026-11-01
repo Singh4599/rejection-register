@@ -554,3 +554,10 @@ body {
   .reason-grid { grid-template-columns: 1fr; }
   .ca-grid { grid-template-columns: 1fr; }
 }
+
+/* ── UNIT 11 / UNIT 12 TOGGLE ── */
+.unit-toggle-wrap { display: flex; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; margin-right: 4px; }
+.unit-btn { padding: 5px 14px; font-size: 12px; font-weight: 600; border: none; background: #fff; color: #374151; cursor: pointer; transition: all 0.15s; }
+.unit-btn.active { background: #c0392b; color: #fff; }
+.unit-btn:not(.active):hover { background: #f3f4f6; }
+

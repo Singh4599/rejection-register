@@ -58,6 +58,27 @@ let activeMonth = 'ALL';
 let editingId = null;
 let srCounter = 1;
 
+// ── UNIT FILTER ───────────────────────────────────────────────────────────────
+const UNIT_STORAGE_KEY = 'lv_rejection_active_unit';
+let activeUnit = localStorage.getItem(UNIT_STORAGE_KEY) || 'Unit 11';
+
+window.setActiveUnit = function(unit) {
+  activeUnit = unit;
+  localStorage.setItem(UNIT_STORAGE_KEY, unit);
+  document.getElementById('unit-btn-11')?.classList.toggle('active', unit === 'Unit 11');
+  document.getElementById('unit-btn-12')?.classList.toggle('active', unit === 'Unit 12');
+  applyFilters();
+};
+
+function initUnitToggle() {
+  document.getElementById('unit-btn-11')?.classList.toggle('active', activeUnit === 'Unit 11');
+  document.getElementById('unit-btn-12')?.classList.toggle('active', activeUnit === 'Unit 12');
+}
+
+function unitEntries() {
+  return allEntries.filter(r => (r.unit || 'Unit 11') === activeUnit);
+}
+
 // ✅ LIFETIME: Month helpers — dynamic, no hardcoded list
 function seedRng(seed) {
   let s = (seed|0)+1; return () => { s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/0xffffffff; };
@@ -142,6 +163,7 @@ function generateEntries() {
   return entries.sort((a,b) => b.date.localeCompare(a.date));
 }// ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
+  initUnitToggle();
   try {
     const cloudData = await loadAllEntriesFromCloud();
     const cloudMap = {};
@@ -164,20 +186,21 @@ async function init() {
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
 function updateStats() {
+  const recs = unitEntries();
   const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
-  el('stat-total', allEntries.length);
-  el('stat-this-month', allEntries.filter(e => {
+  el('stat-total', recs.length);
+  el('stat-this-month', recs.filter(e => {
     const cur = new Date().getMonth();
     const keys = ['','','','APRIL','MAY','JUNE','JULY','AUG','SEP','OCT','NOV','DEC'];
     return e.monthKey === keys[cur+1] || e.monthKey === keys[cur] ;
   }).length);
 
-  const totalKg = allEntries.reduce((s,e) => s + (Number(e.quantityKg)||0), 0);
+  const totalKg = recs.reduce((s,e) => s + (Number(e.quantityKg)||0), 0);
   el('stat-kg', totalKg.toLocaleString() + ' KG');
 
   // Top reason
   const reasonCount = {};
-  allEntries.forEach(e => { reasonCount[e.rejectionReason] = (reasonCount[e.rejectionReason]||0)+1; });
+  recs.forEach(e => { reasonCount[e.rejectionReason] = (reasonCount[e.rejectionReason]||0)+1; });
   const topReason = Object.entries(reasonCount).sort((a,b) => b[1]-a[1])[0];
   el('stat-top-reason', topReason ? topReason[0].split('/')[0].trim() : '—');
 }
@@ -187,15 +210,16 @@ function updateStats() {
 function renderMonthTabs() {
   const bar = document.getElementById('month-tab-bar');
   if (!bar) return;
+  const recs = unitEntries();
   const seen = new Set(), mks = [];
-  [...allEntries].sort((a,b) => a.date.localeCompare(b.date)).forEach(e => {
+  [...recs].sort((a,b) => a.date.localeCompare(b.date)).forEach(e => {
     if (!seen.has(e.monthKey)) { seen.add(e.monthKey); mks.push(e.monthKey); }
   });
   mks.reverse();
-  const allBtn = `<button class="month-tab-btn ${activeMonth==='ALL'?'active':''}" onclick="setMonth('ALL')">All <span class="month-tab-cnt">${allEntries.length}</span></button>`;
+  const allBtn = `<button class="month-tab-btn ${activeMonth==='ALL'?'active':''}" onclick="setMonth('ALL')">All <span class="month-tab-cnt">${recs.length}</span></button>`;
   const tabs = mks.map(mk => {
-    const cnt = allEntries.filter(e => e.monthKey === mk).length;
-    const sample = allEntries.find(e => e.monthKey === mk);
+    const cnt = recs.filter(e => e.monthKey === mk).length;
+    const sample = recs.find(e => e.monthKey === mk);
     const lbl = sample?.monthLabel || mk;
     return `<button class="month-tab-btn ${activeMonth===mk?'active':''}" onclick="setMonth('${mk}')">${lbl} <span class="month-tab-cnt">${cnt}</span></button>`;
   }).join('');
@@ -210,7 +234,7 @@ window.setMonth = function(mk) {
 // ── FILTER ────────────────────────────────────────────────────────────────────
 function applyFilter() {
   const q = searchQuery.toLowerCase();
-  filteredEntries = allEntries.filter(e => {
+  filteredEntries = unitEntries().filter(e => {
     const inMonth = activeMonth === 'ALL' || e.monthKey === activeMonth;
     if (!q) return inMonth;
     return inMonth && (

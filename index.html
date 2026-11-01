@@ -72,6 +72,11 @@
         </div>
       </div>
       <div class="header-right">
+        <!-- Unit 11 / Unit 12 Toggle -->
+        <div class="unit-toggle-wrap">
+          <button class="unit-btn active" id="unit-btn-11" onclick="setActiveUnit('Unit 11')">Unit 11</button>
+          <button class="unit-btn" id="unit-btn-12" onclick="setActiveUnit('Unit 12')">Unit 12</button>
+        </div>
         <button class="btn-header-secondary" onclick="printRegister()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           Print
@@ -370,6 +375,6 @@
   </div><!-- /main-area -->
 </div><!-- /app-shell -->
 
-<script type="module" src="js/app.js"></script>
+<script type="module" src="js/app.js?v=2"></script>
 </body>
 </html>
